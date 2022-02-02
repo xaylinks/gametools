@@ -4,10 +4,13 @@ let path = require("path");
 
 //node steins.js export <file_name>
 //node steins.js import <dir_name>
+//node steins.js ref_import <dir_name> <file_name> (referenced import for file order problem)
 
 //68 archive_header
 //256 file_header
 //* file_length
+
+let ref_files = [];
 
 let exporter = () => {
 
@@ -68,17 +71,18 @@ let exporter = () => {
         file_offset_len = readHex(save_poss, 4);
         save_poss += 4;
         file_name = str_counter(save_poss);
+		ref_files[ref_files.length] = `${process.argv[3].split(".")[0]}\\` + file_name;
         save_poss += 228;
         if (scanned_file_len != file_count) {
             file_name = "Removed File"
-        } else {
+        }else if(process.argv[2] === "export"){
             dirControl(`${process.argv[3].split(".")[0]}\\` + file_name);
             fs.writeFileSync(`${process.argv[3].split(".")[0]}\\` + file_name, Buffer.from(readBytes(file_offset, file_offset_len), "hex"))
         }
         console.log(files_count, file_count + 1, file_name, file_offset, file_offset_len)
         scanned_file_len += 1;
     }
-    console.log("toplam dosya", files_count)
+    // console.log("toplam dosya", files_count)
     // readHex(save_poss,4).readInt32LE();
     // readHex(save_poss,4).toString();
 }
@@ -109,7 +113,7 @@ let importer = () => {
         return x;
     }
 
-    let imported_files = searchDir(process.argv[3]),
+    let imported_files = (process.argv[2] === "ref_import") ? ref_files : searchDir(process.argv[3]),
         file_distance = 0,
         dist_per_file = 0,
         scanned_file_len = 0;
@@ -155,6 +159,18 @@ let importer = () => {
 if (process.argv[2] === "import" && process.argv[3] != undefined) {
     importer()
 }
-if (process.argv[2] === "export" && process.argv[3] != undefined) {
+else if (process.argv[2] === "ref_import" && process.argv[3] != undefined && process.argv[4] != undefined) {
+	let org_file = process.argv[3];
+	process.argv[3] = process.argv[4];
     exporter()
+	process.argv[3] = org_file;
+	importer()
+}
+else if (process.argv[2] === "export" && process.argv[3] != undefined) {
+    exporter()
+} else {
+console.log(`
+//node steins.js export <file_name>
+//node steins.js import <dir_name>
+//node steins.js ref_import <dir_name> <file_name> (referenced import for file order problem)`);
 }
