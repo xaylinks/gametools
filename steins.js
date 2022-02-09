@@ -30,6 +30,7 @@ let exporter = () => {
     }
 
     let save_poss = 8;
+
     function readHex(...params) {
         save_poss += params[1];
         return Buffer.from(readBytes(...params), 'hex').readUInt32LE();
@@ -67,15 +68,19 @@ let exporter = () => {
     while (files_count > scanned_file_len) {
         file_count = readHex(save_poss, 4);
         file_offset = readHex(save_poss, 4);
+        if (file_offset === 0) {
+            save_poss += 248;
+            console.log("<Removed File>")
+            scanned_file_len += 1;
+            continue
+        }
         save_poss += 12;
         file_offset_len = readHex(save_poss, 4);
         save_poss += 4;
         file_name = str_counter(save_poss);
-		ref_files[ref_files.length] = `${process.argv[3].split(".")[0]}\\` + file_name;
+        ref_files[ref_files.length] = `${process.argv[3].split(".")[0]}\\` + file_name;
         save_poss += 228;
-        if (scanned_file_len != file_count) {
-            file_name = "Removed File"
-        }else if(process.argv[2] === "export"){
+        if (process.argv[2] === "export") {
             dirControl(`${process.argv[3].split(".")[0]}\\` + file_name);
             fs.writeFileSync(`${process.argv[3].split(".")[0]}\\` + file_name, Buffer.from(readBytes(file_offset, file_offset_len), "hex"))
         }
@@ -103,7 +108,7 @@ let importer = () => {
         return a //.map(x => x.replace(`${p}\\`, ""));
     }
 
-    function d2h(d) { //int32
+    function int32(d) {
         let h = (d).toString(16),
             x = Buffer.alloc(4);
         h = h.length % 2 ? '0' + h : h;
@@ -120,7 +125,7 @@ let importer = () => {
 
     let archive_header = Buffer.alloc(68); //Archive Header
     archive_header.fill(Buffer.from("4D504B0000000200", "hex"), 0, 8);
-    archive_header.fill(d2h(imported_files.length), 8, 12);
+    archive_header.fill(int32(imported_files.length), 8, 12);
     fs.writeFileSync(`${process.argv[3]}.mpk`, archive_header);
 
     while (imported_files.length > scanned_file_len) {
@@ -135,10 +140,10 @@ let importer = () => {
             dist_per_file += 1
         }
 
-        file_header.fill(d2h(scanned_file_len), 0, 4);
-        file_header.fill(d2h(file_distance), 4, 8);
-        file_header.fill(d2h(file_length), 12, 16);
-        file_header.fill(d2h(file_length), 20, 24);
+        file_header.fill(int32(scanned_file_len), 0, 4);
+        file_header.fill(int32(file_distance), 4, 8);
+        file_header.fill(int32(file_length), 12, 16);
+        file_header.fill(int32(file_length), 20, 24);
         file_header.fill(imported_files[scanned_file_len].replace(`${process.argv[3]}\\`, ""), 28, 28 + imported_files[scanned_file_len].replace(`${process.argv[3]}\\`, "").length);
         console.log(scanned_file_len + 1, imported_files[scanned_file_len].replace(`${process.argv[3]}\\`, ""), file_distance, file_length)
         fs.appendFileSync(`${process.argv[3]}.mpk`, file_header);
@@ -158,18 +163,16 @@ let importer = () => {
 
 if (process.argv[2] === "import" && process.argv[3] != undefined) {
     importer()
-}
-else if (process.argv[2] === "ref_import" && process.argv[3] != undefined && process.argv[4] != undefined) {
-	let org_file = process.argv[3];
-	process.argv[3] = process.argv[4];
+} else if (process.argv[2] === "ref_import" && process.argv[3] != undefined && process.argv[4] != undefined) {
+    let org_file = process.argv[3];
+    process.argv[3] = process.argv[4];
     exporter()
-	process.argv[3] = org_file;
-	importer()
-}
-else if (process.argv[2] === "export" && process.argv[3] != undefined) {
+    process.argv[3] = org_file;
+    importer()
+} else if (process.argv[2] === "export" && process.argv[3] != undefined) {
     exporter()
 } else {
-console.log(`
+    console.log(`
 //node steins.js export <file_name>
 //node steins.js import <dir_name>
 //node steins.js ref_import <dir_name> <file_name> (referenced import for file order problem)`);
