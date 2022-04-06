@@ -1,0 +1,33 @@
+// Multimedia Builder 2.7
+// MBD File (WIP)
+
+ 4 bytes (uint32) - container //0x01 0x00 0x00 0x00
+
+   4 bytes (uint32) - dependents container //0x64 0x00 0x00 0x00
+      unknown_for* {
+       1 bytes (uint8) - variable length
+       x bytes (char) - variable name
+      }
+   4 bytes (uint32) - dependents container end //0xFF 0xFF 0xFF 0xFF
+   
+   4 bytes (uint32) - variable container //0x05 0x00 0x00 0x00 (include 3 file) -image with variants
+                                         //0x03 0x00 0x00 0x00 (include 2 file) -image with alphas
+	                                 //0x0C 0x00 0x00 0x00 (include 1 file) -video etc.
+      1 bytes (uint8) - variable length
+      x bytes (char) - variable name
+      file_count* {
+	8 bytes (uint32) - file container //0x01 0x00 0x00 0x00 0xC0 0x27 0x09 0x00
+        4 bytes (uint32) - width ?
+        4 bytes (uint32) - height ?
+           //if compressed file (openable with offzip)
+	   4 bytes (uint32) - uncompressed file length
+           4 bytes (uint32) - compressed file length
+	   //else
+           4 bytes (uint32) - file length
+	* bytes - image data
+      }
+	4 bytes (uint32) - file container end //0xFF 0xFF 0xFF 0xFF
+
+   4 bytes (uint32) - variable container end //0xFF 0xFF 0xFF 0xFF
+
+ 4 bytes (uint32) - container end //0xFF 0xFF 0xFF 0xFF
