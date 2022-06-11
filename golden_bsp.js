@@ -115,7 +115,7 @@ function bsp_export() {
             scan_pos++; //${parseInt(readHex(scan_pos,1,true).toString("hex"),16)}
 
             if (parseInt(readHex(scan_pos, 1).toString("hex"), 16) > 128) {
-                value_size = (parseInt(readHex(scan_pos, 1).toString("hex"), 16) - 128) + 1;
+                value_size = (parseInt(readHex(scan_pos, 1).toString("hex"), 16) - 128) * 2;
                 value_size = 128 * value_size;
                 scan_pos++;
                 value_size = parseInt(readHex(scan_pos, 1, true).toString("hex"), 16) + value_size;
